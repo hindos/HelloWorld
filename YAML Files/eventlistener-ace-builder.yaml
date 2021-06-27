@@ -1,0 +1,95 @@
+﻿apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  selfLink: >-
+    /apis/triggers.tekton.dev/v1alpha1/namespaces/henda/eventlisteners/ace-builder
+  resourceVersion: '6553413'
+  name: ace-builder
+  uid: 3647ea1d-787a-4288-9ad2-4c239eb9574c
+  creationTimestamp: '2021-03-23T11:32:57Z'
+  generation: 1
+  managedFields:
+    - apiVersion: triggers.tekton.dev/v1alpha1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:spec':
+          .: {}
+          'f:serviceAccountName': {}
+          'f:triggers': {}
+      manager: Mozilla
+      operation: Update
+      time: '2021-03-23T11:32:57Z'
+    - apiVersion: triggers.tekton.dev/v1alpha1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:finalizers': {}
+        'f:status':
+          .: {}
+          'f:address':
+            .: {}
+            'f:url': {}
+          'f:conditions': {}
+          'f:configuration':
+            .: {}
+            'f:generatedName': {}
+      manager: openshift-pipelines-triggers-controller
+      operation: Update
+      time: '2021-03-23T11:33:11Z'
+  namespace: henda
+  finalizers:
+    - eventlisteners.triggers.tekton.dev
+spec:
+  podTemplate: {}
+  serviceAccountName: pipeline
+  triggers:
+    - bindings:
+        - kind: TriggerBinding
+          ref: trigger-binding-github
+      interceptors:
+        - github:
+            eventTypes:
+              - push
+            secretRef:
+              secretKey: secretToken
+              secretName: webhook-secret
+      name: github
+      template:
+        name: ace-pipeline-trigger
+    - bindings:
+        - kind: TriggerBinding
+          ref: trigger-binding-gitlab
+      interceptors:
+        - gitlab:
+            eventTypes:
+              - Push Hook
+            secretRef:
+              secretKey: secretToken
+              secretName: webhook-secret
+      name: gitlab
+      template:
+        name: ace-pipeline-trigger
+status:
+  address:
+    url: 'http://el-ace-builder.henda.svc.cluster.local:8080'
+  conditions:
+    - lastTransitionTime: '2021-03-23T11:33:11Z'
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: 'True'
+      type: Available
+    - lastTransitionTime: '2021-03-23T11:33:11Z'
+      message: Deployment exists
+      status: 'True'
+      type: Deployment
+    - lastTransitionTime: '2021-03-23T11:33:11Z'
+      message: ReplicaSet "el-ace-builder-556bc48d4c" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: 'True'
+      type: Progressing
+    - lastTransitionTime: '2021-03-23T11:33:11Z'
+      message: Service exists
+      status: 'True'
+      type: Service
+  configuration:
+    generatedName: el-ace-builder

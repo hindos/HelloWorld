@@ -1,0 +1,27 @@
+﻿kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: environments
+  namespace: henda
+  selfLink: /api/v1/namespaces/henda/configmaps/environments
+  uid: 585bdd8a-d343-42b4-a748-8849f8bcacfd
+  resourceVersion: '6557655'
+  creationTimestamp: '2021-03-23T11:38:41Z'
+  managedFields:
+    - manager: Mozilla
+      operation: Update
+      apiVersion: v1
+      time: '2021-03-23T11:38:41Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:data':
+          .: {}
+          'f:environments.json': {}
+data:
+  environments.json: |
+    {
+       "dev":"https://c113-e.eu-de.containers.cloud.ibm.com:31536",
+       "sit":"https://c113-e.eu-de.containers.cloud.ibm.com:31536",
+       "uat":"https://c113-e.eu-de.containers.cloud.ibm.com:31536",
+       "esb-non-prod":"https://c113-e.eu-de.containers.cloud.ibm.com:31536"       
+    }

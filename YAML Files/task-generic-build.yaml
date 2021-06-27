@@ -1,0 +1,174 @@
+﻿apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  creationTimestamp: '2021-03-23T10:46:49Z'
+  generation: 5
+  managedFields:
+    - apiVersion: tekton.dev/v1beta1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:spec':
+          .: {}
+          'f:params': {}
+          'f:stepTemplate':
+            .: {}
+            'f:name': {}
+            'f:resources': {}
+            'f:volumeMounts': {}
+          'f:steps': {}
+          'f:volumes': {}
+      manager: Mozilla
+      operation: Update
+      time: '2021-03-29T21:51:14Z'
+  name: generic-build
+  namespace: henda
+  resourceVersion: '13471113'
+  selfLink: /apis/tekton.dev/v1beta1/namespaces/henda/tasks/generic-build
+  uid: 17a9be21-3fe6-4722-b606-9c424d5cfbe2
+spec:
+  params:
+    - name: git-url
+      type: string
+    - default: master
+      name: git-revision
+      type: string
+    - name: source-dir
+      type: string
+    - name: image-name
+      type: string
+    - name: image-tag
+      type: string
+    - name: registry-location
+      type: string
+    - name: registry-namespace
+      type: string
+    - name: tools-image
+      type: string
+    - name: master-image
+      type: string
+    - default: 'quay.io/buildah/stable:v1.15.0'
+      name: BUILDER_IMAGE
+      type: string
+    - default: ./Dockerfile
+      name: DOCKERFILE
+      type: string
+    - default: .
+      name: CONTEXT
+      type: string
+    - default: 'false'
+      name: TLSVERIFY
+      type: string
+    - default: docker
+      name: FORMAT
+      type: string
+    - default: overlay
+      name: STORAGE_DRIVER
+      type: string
+  stepTemplate:
+    name: ''
+    resources: {}
+    volumeMounts:
+      - mountPath: $(params.source-dir)
+        name: source
+  steps:
+    - env:
+        - name: GIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: ibm-git-credentials
+              optional: true
+        - name: GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: ibm-git-credentials
+              optional: true
+      image: $(params.tools-image)
+      name: git-clone
+      resources: {}
+      script: |
+        set +x
+        if [[ -n "${GIT_USERNAME}" ]] && [[ -n "${GIT_PASSWORD}" ]]; then
+            git clone "$(echo $(params.git-url) | awk -F '://' '{print $1}')://${GIT_USERNAME}:${GIT_PASSWORD}@$(echo $(params.git-url) | awk -F '://' '{print $2}')" $(params.source-dir)
+        else
+            set -x
+            git clone $(params.git-url) $(params.source-dir)
+        fi
+        set -x
+        cd $(params.source-dir)
+        git checkout master      
+    - env:
+        - name: REGISTRY_USER
+          valueFrom:
+            secretKeyRef:
+              key: REGISTRY_USER
+              name: ibm-registry-access
+              optional: false
+        - name: REGISTRY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: REGISTRY_PASSWORD
+              name: ibm-registry-access
+              optional: false
+      image: $(params.BUILDER_IMAGE)
+      name: build
+      resources: {}
+      script: >
+        set +x
+
+        APP_IMAGE="$(params.registry-namespace)/$(params.image-name):$(params.image-tag)"
+
+        LATEST="$(params.registry-namespace)/$(params.image-name):latest"
+
+        MASTER_IMAGE=`echo $(params.master-image) | sed 's/ *$//g'` 
+
+
+        echo "Building image [${APP_IMAGE}]"
+
+
+        echo "buildah login -u \"${REGISTRY_USER}\" -p \"xxxxx\"
+        \"$(params.registry-location)\""
+
+        buildah login -u "${REGISTRY_USER}" -p "${REGISTRY_PASSWORD}"
+        "$(params.registry-location)"
+
+
+        echo "buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud
+        --pull-always --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY)
+        -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)"
+
+        buildah --layers --storage-driver=$(params.STORAGE_DRIVER) bud
+        --pull-always --format=$(params.FORMAT) --tls-verify=$(params.TLSVERIFY)
+        -f $(params.DOCKERFILE) -t ${APP_IMAGE} $(params.CONTEXT)
+
+
+        echo "buildah --storage-driver=$(params.STORAGE_DRIVER) push
+        --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest
+        ${APP_IMAGE} docker://${APP_IMAGE}"
+
+        buildah --storage-driver=$(params.STORAGE_DRIVER) push
+        --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest
+        ${APP_IMAGE} docker://${APP_IMAGE}      
+
+
+        if [[ ${MASTER_IMAGE} == "true" ]];
+
+        then
+           echo "buildah --storage-driver=$(params.STORAGE_DRIVER) tag ${APP_IMAGE} ${LATEST}"
+           buildah --storage-driver=$(params.STORAGE_DRIVER) tag ${APP_IMAGE} ${LATEST}
+
+           echo "buildah --storage-driver=$(params.STORAGE_DRIVER) push ${LATEST}"
+           buildah --storage-driver=$(params.STORAGE_DRIVER) push --tls-verify=$(params.TLSVERIFY) --digestfile ./image-digest ${LATEST}
+        fi
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: /var/lib/containers
+          name: varlibcontainers
+      workingDir: $(params.source-dir)
+  volumes:
+    - emptyDir: {}
+      name: varlibcontainers
+    - emptyDir: {}
+      name: source

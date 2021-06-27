@@ -1,0 +1,43 @@
+﻿apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  creationTimestamp: '2021-03-23T11:12:14Z'
+  generation: 1
+  managedFields:
+    - apiVersion: triggers.tekton.dev/v1alpha1
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:spec':
+          .: {}
+          'f:params': {}
+          'f:resourcetemplates': {}
+      manager: Mozilla
+      operation: Update
+      time: '2021-03-23T11:12:14Z'
+  name: ace-pipeline-trigger
+  namespace: henda
+  resourceVersion: '6537506'
+  selfLink: >-
+    /apis/triggers.tekton.dev/v1alpha1/namespaces/henda/triggertemplates/ace-pipeline-trigger
+  uid: f1a7554b-5f1c-4ff7-86be-264745175996
+spec:
+  params:
+    - description: The git revision
+      name: gitrevision
+    - description: The git repository url
+      name: gitrepositoryurl
+    - description: The project name
+      name: gitprojectname
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: TaskRun
+      metadata:
+        generateName: webhook-
+      spec:
+        params:
+          - name: git-url
+            value: $(tt.params.gitrepositoryurl)
+          - name: git-revision
+            value: $(tt.params.gitrevision)
+        taskRef:
+          name: task-run-pipeline
