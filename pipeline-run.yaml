@@ -30,6 +30,6 @@ spec:
   - name: environment
     value: "dev"
   pipelineRef:
-    name: ace-pipeline
+    name: new-ace-pipeline
   serviceAccountName: pipeline
   timeout: 1h0m0s
